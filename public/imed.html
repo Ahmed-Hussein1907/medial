@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>بوابة المريض - iMED</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background-color: #f3f6fc;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+        }
+
+        header {
+            background-color: #2979ff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+
+        h2 {
+            color: #2979ff;
+            margin-top: 0;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section div {
+            margin: 5px 0;
+        }
+
+        .logout {
+            background-color: #e53935;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            position: absolute;
+            left: 20px;
+            top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        نظام iMED - بوابة المريض
+        <button class="logout" onclick="logout()">تسجيل الخروج</button>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h2>بياناتي</h2>
+            <div>الاسم: <span id="name"></span></div>
+            <div>البريد الإلكتروني: <span id="email"></span></div>
+            <div>الدور: <span id="role"></span></div>
+        </div>
+
+        <div class="section">
+            <h2>آخر المؤشرات الحيوية</h2>
+            <div>النبض: <span id="pulse"></span> bpm</div>
+            <div>درجة الحرارة: <span id="temp"></span> °C</div>
+            <div>نسبة الأوكسجين: <span id="spo2"></span> %</div>
+            <div>الضغط: <span id="bp"></span></div>
+            <div>نسبة السكر: <span id="sugar"></span> mg/dL</div>
+            <div>مؤشر كتلة الجسم (BMI): <span id="bmi"></span></div>
+        </div>
+
+        <div class="section">
+            <a href="/patient-reports.html">📋 التقارير الطبية</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("يجب تسجيل الدخول أولاً");
+            window.location.href = "/auth.html";
+        }
+
+        const user = jwt_decode(token);
+
+        // عرض بيانات المستخدم
+        document.getElementById("name").textContent = user.name;
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("role").textContent = user.role;
+
+        // جلب المؤشرات الحيوية للمريض
+        fetch(`http://localhost:3000/api/patient/${user.id}/vitals`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(res => res.json())
+            .then(data => {
+                const v = data.vitals;
+                if (!v) {
+                    document.getElementById("pulse").textContent = "لا توجد بيانات";
+                    return;
+                }
+
+                document.getElementById("pulse").textContent = v.HEART_RATE;
+                document.getElementById("temp").textContent = v.BODY_TEMP;
+                document.getElementById("spo2").textContent = v.SPO2;
+                document.getElementById("bp").textContent = v.BLOOD_PRESSURE;
+                document.getElementById("sugar").textContent = `${v.GLUCOSE_LEVEL_MIN} - ${v.GLUCOSE_LEVEL_MAX}`;
+                document.getElementById("bmi").textContent = v.BMI;
+            })
+            .catch(err => {
+                console.error("خطأ في تحميل البيانات:", err);
+                alert("حدث خطأ أثناء تحميل البيانات");
+            });
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "/auth.html";
+        }
+    </script>
+</body>
+
+</html>

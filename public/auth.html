@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>نظام المصادقة</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            width: 420px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2a79ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #1f63d0;
+        }
+
+        .google-btn {
+            background-color: #db4437;
+            margin-top: 10px;
+        }
+
+        .logout-btn {
+            background-color: #ff4d4d;
+            margin-top: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .tabs button {
+            background-color: #eaeaea;
+            color: #000;
+            border-radius: 0;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tabs button.active {
+            background-color: #fff;
+            border-bottom: 3px solid #2a79ff;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .message {
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" data-target="login">تسجيل الدخول</button>
+            <button class="tab" data-target="register">التسجيل</button>
+            <button class="tab" data-target="change">تغيير الباسورد</button>
+        </div>
+
+        <!-- تسجيل الدخول -->
+        <div class="tab-content active" id="login">
+            <h2>تسجيل الدخول</h2>
+            <input type="email" id="loginEmail" placeholder="البريد الإلكتروني">
+            <input type="password" id="loginPassword" placeholder="كلمة المرور">
+            <button onclick="login()">دخول</button>
+            <button class="google-btn" onclick="loginWithGoogle()">تسجيل الدخول بـ Google</button>
+            <div class="message" id="loginMsg"></div>
+        </div>
+
+        <!-- التسجيل -->
+        <div class="tab-content" id="register">
+            <h2>إنشاء حساب</h2>
+            <input type="text" id="regName" placeholder="الاسم">
+            <input type="email" id="regEmail" placeholder="البريد الإلكتروني">
+            <input type="password" id="regPassword" placeholder="كلمة المرور">
+            <select id="regRole">
+                <option value="user">مستخدم</option>
+                <option value="doctor">طبيب</option>
+                <option value="patient">مريض</option>
+                <option value="admin">أدمن</option>
+            </select>
+            <button onclick="register()">تسجيل</button>
+            <div class="message" id="registerMsg"></div>
+        </div>
+
+        <!-- تغيير الباسورد -->
+        <div class="tab-content" id="change">
+            <h2>تغيير الباسورد</h2>
+            <input type="email" id="changeEmail" placeholder="البريد الإلكتروني">
+            <input type="password" id="oldPassword" placeholder="كلمة المرور القديمة">
+            <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة">
+            <button onclick="changePassword()">تحديث</button>
+            <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+            <div class="message" id="changeMsg"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+    <script>
+        let token = localStorage.getItem("token") || "";
+
+        const urlToken = new URLSearchParams(window.location.search).get("token");
+        if (urlToken) {
+            try {
+                const user = jwt_decode(urlToken);
+                token = urlToken;
+                localStorage.setItem("token", token);
+                alert("✅ تم تسجيل الدخول بجوجل بنجاح\n" + user.name + " - " + user.email);
+                redirectUser(user.role);
+            } catch (e) {
+                alert("❌ توكن غير صالح من جوجل");
+            }
+        }
+
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+                btn.classList.add("active");
+                document.getElementById(btn.dataset.target).classList.add("active");
+            };
+        });
+
+        function redirectUser(role) {
+            if (role === "patient") window.location.href = "/imed.html";
+            else if (role === "doctor") window.location.href = "/doctor-dashboard.html";
+            else if (role === "admin") window.location.href = "/admin-dashboard.html";
+            else window.location.href = "/";
+        }
+
+        async function login() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+            const res = await fetch("http://localhost:3000/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            const msg = document.getElementById("loginMsg");
+            if (res.ok) {
+                token = data.token;
+                localStorage.setItem("token", token);
+                msg.style.color = "green";
+                msg.textContent = "✅ تم تسجيل الدخول";
+                const user = jwt_decode(token);
+                setTimeout(() => redirectUser(user.role), 1000);
+            } else {
+                msg.style.color = "red";
+                msg.textContent = data.message;
+            }
+        }
+
+        async function register() {
+            const name = document.getElementById("regName").value;
+            const email = document.getElementById("regEmail").value;
+            const password = document.getElementById("regPassword").value;
+            const role = document.getElementById("regRole").value;
+
+            const res = await fetch("http://localhost:3000/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password, role })
+            });
+
+            const data = await res.json();
+            const msg = document.getElementById("registerMsg");
+            msg.textContent = data.message;
+            msg.style.color = res.ok ? "green" : "red";
+        }
+
+        async function changePassword() {
+            const email = document.getElementById("changeEmail").value;
+            const oldPassword = document.getElementById("oldPassword").value;
+            const newPassword = document.getElementById("newPassword").value;
+
+            const res = await fetch("http://localhost:3000/api/auth/change-password-with-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ email, oldPassword, newPassword })
+            });
+
+            const data = await res.json();
+            const msg = document.getElementById("changeMsg");
+            msg.textContent = data.message;
+            msg.style.color = res.ok ? "green" : "red";
+        }
+
+        function loginWithGoogle() {
+            window.location.href = "http://localhost:3000/api/auth/google";
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            token = "";
+            alert("تم تسجيل الخروج");
+            window.location.href = "/auth.html";
+        }
+    </script>
+</body>
+
+</html>

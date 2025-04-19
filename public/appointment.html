@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Book Appointment</title>
+</head>
+
+<body>
+    <h1>Book Appointment</h1>
+
+    <form id="appointmentForm" enctype="multipart/form-data">
+        <label>Appointment for:
+            <select name="appointmentFor">
+                <option value="MySelf">MySelf</option>
+                <option value="Dependent">Dependent</option>
+            </select>
+        </label><br>
+
+        <label>Choose Dependent:
+            <input type="text" name="dependentName" />
+        </label><br>
+
+        <label>Do you have insurance?
+            <select name="hasInsurance">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+        </label><br>
+
+        <label>Reason:
+            <textarea name="reason"></textarea>
+        </label><br>
+
+        <label>Symptoms:
+            <input type="text" name="symptoms" />
+        </label><br>
+
+        <label>Consultation Type:
+            <select name="consultationType">
+                <option value="video">Video</option>
+                <option value="audio">Audio</option>
+                <option value="chat">Chat</option>
+                <option value="home">Home Visit</option>
+            </select>
+        </label><br>
+
+        <label>Attachment:
+            <input type="file" name="attachment" />
+        </label><br><br>
+
+        <button type="submit">Book Now</button>
+    </form>
+
+    <script>
+        document.getElementById("appointmentForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+
+            const token = localStorage.getItem("token"); // تأكد إنه محفوظ في localStorage
+
+            const response = await fetch("http://localhost:3000/api/appointment", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}` // ✅ لازم Bearer
+                },
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(`❌ Error: ${result.message}`);
+            } else {
+                alert("✅ Appointment booked successfully!");
+            }
+        });
+
+        // تخزين التوكن يدويًا للتجربة (مؤقتًا فقط)
+        localStorage.setItem("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ODEsIm5hbWUiOiJBaG1lZCIsImVtYWlsIjoiYWhtZWRfa21hbEBnbWFpbC5jb20iLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTc0NDIyMzM1NCwiZXhwIjoxNzQ0MjI2OTU0fQ.TPoXX4Bw5q8b-DUFaSlm2oVhnhT4QX55VeT6UvEPNDk");
+    </script>
+</body>
+
+</html>

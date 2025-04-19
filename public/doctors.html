@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctors</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f2f2f2;
+            padding: 20px;
+        }
+
+        .doctor-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            max-width: 700px;
+        }
+
+        .doctor-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .doctor-header img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .doctor-header h2,
+        .doctor-header p {
+            margin: 0;
+        }
+
+        .info {
+            margin-top: 10px;
+        }
+
+        .info b {
+            display: inline-block;
+            width: 150px;
+        }
+
+        select {
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Doctor Profile</h1>
+    <select id="doctorSelect">
+        <option value="">-- Select Doctor --</option>
+    </select>
+    <div id="doctorProfile" class="doctor-card" style="display: none;"></div>
+
+    <script>
+        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQyLCJuYW1lIjoiQWhtZWQiLCJlbWFpbCI6ImFobWVkaWJAbWVkaWFsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc0NDg5MDA2MywiZXhwIjoxNzQ0ODkzNjYzfQ.MUkIpcsyPyZdqI8Q93qTBsNud2zRNvZdCoxHZE2L11U";
+
+        async function fetchDoctors() {
+            const res = await fetch("http://localhost:3000/api/doctor/doctors", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const doctors = await res.json();
+
+            const select = document.getElementById("doctorSelect");
+            doctors.forEach((doc, index) => {
+                const opt = document.createElement("option");
+                opt.value = index;
+                opt.textContent = doc[1]; // name
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", e => {
+                const selected = doctors[e.target.value];
+                if (!selected) return;
+                displayDoctor(selected);
+            });
+        }
+
+        function displayDoctor(doc) {
+            const profile = document.getElementById("doctorProfile");
+            profile.style.display = 'block';
+            profile.innerHTML = `
+        <div class="doctor-header">
+          <img src="${doc[8]}" alt="Doctor Image">
+          <div>
+            <h2>${doc[1]}</h2>
+            <p><i>${doc[2]}</i></p>
+            <p>${doc[3]}</p>
+          </div>
+        </div>
+        <div class="info">
+          <p><b>Appointment Time:</b> ${doc[4]}</p>
+          <p><b>Appointment Type:</b> ${doc[5]}</p>
+          <p><b>Service Name:</b> ${doc[6]}</p>
+          <p><b>Service Duration:</b> ${doc[7]}</p>
+        </div>
+      `;
+        }
+
+        fetchDoctors();
+    </script>
+</body>
+
+</html>

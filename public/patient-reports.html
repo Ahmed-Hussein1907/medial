@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>التقارير الطبية</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            background-color: #f5f8fc;
+            padding: 30px;
+        }
+
+        .report {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+        }
+
+        .report h3 {
+            color: #2979ff;
+            margin: 0 0 10px;
+        }
+
+        .back-btn {
+            background-color: #2979ff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .back-btn:hover {
+            background-color: #1f5ccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="back-btn" onclick="window.location.href='/imed.html'">🔙 العودة لصفحة المريض</button>
+
+    <div id="reports"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("يرجى تسجيل الدخول أولاً");
+            window.location.href = "/auth.html";
+        }
+
+        const user = jwt_decode(token);
+        const reportsDiv = document.getElementById("reports");
+
+        fetch(`http://localhost:3000/api/patient/${user.id}/reports`, {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.reports || data.reports.length === 0) {
+                    reportsDiv.innerHTML = "<p>لا توجد تقارير طبية بعد.</p>";
+                    return;
+                }
+
+                data.reports.forEach(r => {
+                    const div = document.createElement("div");
+                    div.classList.add("report");
+                    div.innerHTML = `
+                        <h3>${r.REPORT_NAME}</h3>
+                        <p><strong>النوع:</strong> ${r.REPORT_TYPE}</p>
+                        <p><strong>التاريخ:</strong> ${new Date(r.REPORT_DATE).toLocaleDateString()}</p>
+                        <p><strong>ملاحظات:</strong> ${r.REPORT_COMMENT || 'لا توجد ملاحظات'}</p>
+                    `;
+                    reportsDiv.appendChild(div);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                reportsDiv.innerHTML = "<p>حدث خطأ أثناء تحميل التقارير.</p>";
+            });
+    </script>
+</body>
+
+</html>
